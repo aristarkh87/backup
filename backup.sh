@@ -4,7 +4,8 @@
 #  
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation version 3.
+#  the Free Software Foundation; either version 3 of the License, or
+#  (at your option) any later version.
 #  
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -43,7 +44,7 @@ directory_backup() {
     directories=${directories/;/ }
     for directory in ${directories}
     do
-        backup_name="${backup_date}-$(basename ${directory})-${backup_suffix}"
+        backup_name="${backup_date}-$(basename ${directory})-dir-${backup_suffix}"
         tar -cf "${backup_name}.${backup_extention}" "${directory}" ${tar_options} 2> "${backup_error}"
         if [ $? -eq 0 ]
         then
@@ -60,16 +61,27 @@ directory_backup() {
 
 mysql_backup() {
     backup_extention='tar.gz'
+    if [ "${db_server}" ]
+    then
+        db_server="-h${db_server}"
+    else
+        db_server='-hlocalhost'
+    fi
     if [ "${db_username}" ]
     then
-        mysql_auth="-u${db_username} -p${db_password}"
+        if [ "${db_password}" ]
+        then
+            mysql_auth="-u${db_username} -p${db_password}"
+        else
+            mysql_auth="-u${db_username}"
+        fi
     fi
     cd "${backup_directory}"
     databases=${databases/;/ }
     for database in ${databases}
     do
-        backup_name="${backup_date}-${database}-${backup_suffix}"
-        mysqldump ${mysql_auth} ${dump_options} ${database} > "${backup_name}.sql" 2> "${backup_error}"
+        backup_name="${backup_date}-${database}-db-${backup_suffix}"
+        mysqldump ${db_server} ${mysql_auth} ${db_backup_options} ${database} > "${backup_name}.sql" 2> "${backup_error}"
         if [ $? -eq 0 ]
         then
             tar -czf "${backup_name}.${backup_extention}" "${backup_name}.sql"

@@ -2,47 +2,58 @@
 directories='/etc;/usr/local/etc'
 
 # Tar options
+# Enable gzip for directory backup. Supported values: 'yes', 'no'
 enable_gzip='yes'
+# List of tar options
 tar_options=''
 
 # List of databases to backup, separated by semi-colon
-databases='jira;confluence'
+databases=''
 
 # Database dump options
+# Utility to backup database. Supported values: 'mysqldump', 'pg_dump'
 db_backup_util='mysqldump'
+# Database server, username and password
+db_server='localhost'
 db_username='username'
 db_password='password'
-db_dump_options='--single-transaction --max-allowed-packet=1G'
+# Database backup options
+db_backup_options='--single-transaction --max-allowed-packet=1G'
 
 # Mail Notification options
-# You need to install sendemail (sudo apt-get install sendemail)
+# You need to install sendemail (sudo apt-get install sendemail). Supported values: 'yes', 'no'
 enable_mail_notification=yes
+# Mail options: smtp server, recipient, sender, subject
+mail_server='mail.example.org'
 mail_to='admin@example.org'
 mail_from="noreply@$(hostname -f)"
 mail_subject='Backup error'
-mail_server='mail.example.org'
 
 # Backup options
-# backup_type may be local, nfs, cifs or ftp
+# Supported values local, nfs, cifs or ftp
 backup_type='local'
+# Directory for backup files
 backup_directory='/usr/backups/data'
-backup_date=$(/bin/date +%Y-%m-%d-%H-%M)
+# Date format and suffix for backup name
+backup_date=$(/bin/date +%Y-%m-%d)
 backup_suffix='backup'
+# Enable backup rotation. Supported values: 'yes', 'no'
+backup_rotation_enabled='yes'
+# If rotation enabled, backups will be removed over a specified number of days
 backup_rotation=7
+# Name of the server to store backups, username and password
 backup_server='storage.example.org'
 backup_server_username='username'
 backup_server_password='password'
-backup_logfile='/var/log/backup/backup.log'
+# Path to backup log file
+backup_logfile='/tmp/backup.log'
+# Temp file for backup error
 backup_error='/tmp/backup_error.log'
-
-# NFS options
+# NFS target and options
 nfs_target="/raid/data/backups/$(hostname -f)"
 nfs_options='nfsvers=3,hard,intr'
-
-# CIFS options
+# CIFS directory and options
 cifs_directory="$(hostname -f)"
 cifs_options=''
-
-# FTP options
+# FTP directory
 ftp_directory="$(hostname -f)"
-
