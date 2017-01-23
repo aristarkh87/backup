@@ -19,8 +19,13 @@
 #  
 #  
 
-working_dir=$(dirname $0)
-source "${working_dir}/backup.conf"
+if [ "$1" ]
+then
+    source "$1"
+else
+    working_dir="$(dirname $0)"
+    source "${working_dir}/backup.conf"
+fi
 
 # Functions
 send_email() {
