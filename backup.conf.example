@@ -1,15 +1,7 @@
 # List of directories to backup, separated by semi-colon
 directories='/etc;/usr/local/etc'
-
-# Tar options
-# Enable gzip for directory backup. Supported values: 'yes', 'no'
-enable_gzip='yes'
-# List of tar options
-tar_options=''
-
 # List of databases to backup, separated by semi-colon
 databases=''
-
 # Database dump options
 # Utility to backup database. Supported values: 'mysqldump', 'pg_dump'
 db_backup_util='mysqldump'
@@ -19,6 +11,11 @@ db_username='username'
 db_password='password'
 # Database backup options
 db_backup_options='--single-transaction --max-allowed-packet=1G'
+
+# Enable or disable gzip in tar. Supported values: 'yes', 'no'
+enable_gzip='yes'
+# List of tar options
+tar_options=''
 
 # Mail Notification options
 # You need to install sendemail (sudo apt-get install sendemail). Supported values: 'yes', 'no'

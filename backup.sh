@@ -36,7 +36,7 @@ send_email() {
     fi
 }
 
-directory_backup() {
+check_enable_gzip() {
     if [ yes = "${enable_gzip}" ]
     then
         tar_options="--gzip ${tar_options}"
@@ -44,7 +44,10 @@ directory_backup() {
     else
         backup_extention='tar'
     fi
+}
 
+directory_backup() {
+    check_enable_gzip
     cd "${backup_directory}"
     directories=${directories/;/ }
     for directory in ${directories}
@@ -65,7 +68,7 @@ directory_backup() {
 }
 
 mysql_backup() {
-    backup_extention='tar.gz'
+    check_enable_gzip
     if [ "${db_server}" ]
     then
         db_server="-h${db_server}"
@@ -89,7 +92,7 @@ mysql_backup() {
         mysqldump ${db_server} ${mysql_auth} ${db_backup_options} ${database} > "${backup_name}.sql" 2> "${backup_error}"
         if [ $? -eq 0 ]
         then
-            tar -czf "${backup_name}.${backup_extention}" "${backup_name}.sql"
+            tar -cf "${backup_name}.${backup_extention}" "${backup_name}.sql" ${tar_options}
             chmod 600 "${backup_name}.${backup_extention}"
             echo "$(date "+%F %H:%M:%S") [SUCCESS] Backup database \"${database}\" completed. Backup name \"${backup_name}.${backup_extention}\"" >> "${backup_logfile}"
         else
