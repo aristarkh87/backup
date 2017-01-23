@@ -48,12 +48,13 @@ check_enable_gzip() {
 
 directory_backup() {
     check_enable_gzip
-    cd "${backup_directory}"
     directories=${directories/;/ }
     for directory in ${directories}
     do
-        backup_name="${backup_date}-$(basename ${directory})-dir-${backup_suffix}"
-        tar -cf "${backup_name}.${backup_extention}" "${directory}" ${tar_options} 2> "${backup_error}"
+        cd $(dirname "$directory")
+        directory_basename=$(basename "${directory}")
+        backup_name="${backup_date}-${directory_basename}-dir-${backup_suffix}"
+        tar -cf "${backup_directory}/${backup_name}.${backup_extention}" "${directory_basename}" ${tar_options} 2> "${backup_error}"
         if [ $? -eq 0 ]
         then
             echo "$(date "+%F %H:%M:%S") [SUCCESS] Backup directory \"${directory}\" completed. Backup name \"${backup_name}.${backup_extention}\"" >> "${backup_logfile}"
@@ -61,9 +62,9 @@ directory_backup() {
             echo "$(date "+%F %H:%M:%S") [ERROR] Backup directory \"${directory}\" failed. Error: \"$(cat ${backup_error})\"" >> "${backup_logfile}"
             mail_subject="${mail_subject}: ${directory}"
             send_email
-            rm "${backup_name}.${backup_extention}"
+            rm "${backup_directory}/${backup_name}.${backup_extention}"
         fi
-        chmod 600 "${backup_name}.${backup_extention}"
+        chmod 600 "${backup_directory}/${backup_name}.${backup_extention}"
     done
 }
 
