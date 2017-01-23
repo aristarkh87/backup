@@ -23,8 +23,8 @@ if [ "$1" ]
 then
     source "$1"
 else
-    working_dir="$(dirname $0)"
-    source "${working_dir}/backup.conf"
+    echo "Usage: $0 config-file.conf"
+    exit 1
 fi
 
 # Functions
