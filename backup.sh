@@ -116,7 +116,7 @@ start_backup() {
 }
 
 rotate_backup() {
-    if [ "${backup_rotation_enabled}" ]
+    if [ yes = "${backup_rotation_enabled}" ]
     then
         find -mtime +${backup_rotation} -delete
     fi
