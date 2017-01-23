@@ -112,18 +112,26 @@ start_backup() {
     fi
 }
 
+rotate_backup() {
+    if [ "${backup_rotation_enabled}" ]
+    then
+        find -mtime +${backup_rotation} -delete
+    fi
+}
+
 # Main
 main() {
     case ${backup_type} in
         local)
             start_backup
-            find -mtime +${backup_rotation} -delete
+            rotate_backup
         ;;
         nfs)
             mount -t nfs "${backup_server}:${nfs_target}" "${backup_directory}" -o ${nfs_options} 2> "${backup_error}"
             if [ $? -eq 0 ]
             then
                 start_backup
+                rotate_backup
                 cd /tmp
                 umount "${backup_directory}"
             else
@@ -154,6 +162,7 @@ main() {
             if [ $? -eq 0 ]
             then
                 start_backup
+                rotate_backup
                 cd /tmp
                 umount "${backup_directory}"
             else

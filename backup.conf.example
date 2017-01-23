@@ -38,7 +38,7 @@ backup_directory='/usr/backups/data'
 backup_date=$(/bin/date +%Y-%m-%d)
 backup_suffix='backup'
 # Enable backup rotation. Supported values: 'yes', 'no'
-backup_rotation_enabled='yes'
+backup_rotation_enabled='no'
 # If rotation enabled, backups will be removed over a specified number of days
 backup_rotation=7
 # Name of the server to store backups, username and password
