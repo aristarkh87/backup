@@ -103,7 +103,10 @@ start_backup() {
 rotate_backup() {
     if [ yes = "${backup_rotation_enabled}" ]
     then
-        find -mtime +${backup_rotation} -delete
+        cd "${backup_directory}"
+        if [ '/' != $(pwd) ]; then
+            find -mtime +${backup_rotation} -delete
+        fi
     fi
 }
 
