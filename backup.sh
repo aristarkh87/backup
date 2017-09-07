@@ -101,11 +101,12 @@ start_backup() {
 }
 
 rotate_backup() {
-    if [ yes = "${backup_rotation_enabled}" ]
-    then
+    if [ yes = "${backup_rotation_enabled}" ]; then
         cd "${backup_directory}"
-        if [ '/' != $(pwd) ]; then
-            find -mtime +${backup_rotation} -delete
+        if [ $? -eq 0 ]; then
+            if [ '/' != $(pwd) ]; then
+                find -mtime +${backup_rotation} -delete
+            fi
         fi
     fi
 }
