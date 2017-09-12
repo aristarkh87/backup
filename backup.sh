@@ -105,7 +105,7 @@ rotate_backup() {
         cd "${backup_directory}"
         if [ $? -eq 0 ]; then
             if [ '/' != $(pwd) ]; then
-                find -mtime +${backup_rotation} -delete
+                find "${backup_directory}" -type f -name "*${backup_extention}" -mtime +${backup_rotation} -delete
             fi
         fi
     fi

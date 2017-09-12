@@ -1,5 +1,5 @@
 # List of directories to backup, separated by semi-colon
-directories='/etc;/usr/local/etc'
+directories='/etc'
 
 # List of databases to backup, separated by semi-colon
 databases=''
