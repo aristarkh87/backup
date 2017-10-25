@@ -3,8 +3,7 @@
 # Copyright (c) 2017 Oleg Dolgikh
 #
 
-if [ "$1" ]
-then
+if [ "$1" ]; then
     source "$1"
 else
     echo "Usage: $0 config-file.conf"
@@ -13,16 +12,14 @@ fi
 
 # Functions
 send_email() {
-    if [ yes = "${enable_mail_notification}" ]
-    then
+    if [ yes = "${enable_mail_notification}" ]; then
         send_command="sendemail -f ${mail_from} -t ${mail_to} -u ${mail_subject} -s ${mail_server}"
         cat ${backup_error} | ${send_command}
     fi
 }
 
 check_enable_gzip() {
-    if [ yes = "${enable_gzip}" ]
-    then
+    if [ yes = "${enable_gzip}" ]; then
         tar_options="--gzip ${tar_options}"
         backup_extention='tar.gz'
     else
@@ -39,9 +36,12 @@ directory_backup() {
         directory_basename=$(basename "${directory}")
         backup_name="${backup_date}-${directory_basename}-dir-${backup_suffix}"
         tar -cf "${backup_directory}/${backup_name}.${backup_extention}" "${directory_basename}" ${tar_options} 2> "${backup_error}"
-        if [ $? -eq 0 ]
-        then
+        if [ $? -eq 0 ]; then
             echo "$(date "+%F %H:%M:%S") [SUCCESS] Backup directory \"${directory}\" completed. Backup name \"${backup_name}.${backup_extention}\"" >> "${backup_logfile}"
+        elif [ $? -eq 1 ]; then
+            echo "$(date "+%F %H:%M:%S") [WARNING] Backup directory \"${directory}\" not consisted. Warning: \"$(cat ${backup_error})\"" >> "${backup_logfile}"
+            mail_subject="${mail_subject}: ${directory}"
+            send_email
         else
             echo "$(date "+%F %H:%M:%S") [ERROR] Backup directory \"${directory}\" failed. Error: \"$(cat ${backup_error})\"" >> "${backup_logfile}"
             mail_subject="${mail_subject}: ${directory}"
@@ -54,14 +54,12 @@ directory_backup() {
 
 mysql_backup() {
     check_enable_gzip
-    if [ "${db_server}" ]
-    then
+    if [ "${db_server}" ]; then
         db_server="-h${db_server}"
     else
         db_server='-hlocalhost'
     fi
-    if [ "${db_username}" ]
-    then
+    if [ "${db_username}" ]; then
         if [ "${db_password}" ]
         then
             mysql_auth="-u${db_username} -p${db_password}"
@@ -75,8 +73,7 @@ mysql_backup() {
     do
         backup_name="${backup_date}-${database}-db-${backup_suffix}"
         mysqldump ${db_server} ${mysql_auth} ${db_backup_options} ${database} > "${backup_name}.sql" 2> "${backup_error}"
-        if [ $? -eq 0 ]
-        then
+        if [ $? -eq 0 ]; then
             tar -cf "${backup_name}.${backup_extention}" "${backup_name}.sql" ${tar_options}
             chmod 600 "${backup_name}.${backup_extention}"
             echo "$(date "+%F %H:%M:%S") [SUCCESS] Backup database \"${database}\" completed. Backup name \"${backup_name}.${backup_extention}\"" >> "${backup_logfile}"
@@ -90,12 +87,10 @@ mysql_backup() {
 }
 
 start_backup() {
-    if [ ${directories} ]
-    then
+    if [ ${directories} ]; then
         directory_backup
     fi
-    if [ ${databases} ]
-    then
+    if [ ${databases} ]; then
         mysql_backup
     fi
 }
@@ -120,8 +115,7 @@ main() {
         ;;
         nfs)
             mount -t nfs "${backup_server}:${nfs_target}" "${backup_directory}" -o ${nfs_options} 2> "${backup_error}"
-            if [ $? -eq 0 ]
-            then
+            if [ $? -eq 0 ]; then
                 start_backup
                 rotate_backup
                 cd /tmp
@@ -135,15 +129,13 @@ main() {
         cifs)
             if [ "${backup_server_username}" ]
             then
-                if [ "${cifs_options}" ]
-                then
+                if [ "${cifs_options}" ]; then
                     cifs_options="-o user=${backup_server_username},password=${backup_server_password},${cifs_options}"
                 else
                     cifs_options="-o user=${backup_server_username},password=${backup_server_password}"
                 fi
             else
-                if [ "${cifs_options}" ]
-                then
+                if [ "${cifs_options}" ]; then
                     cifs_options="-o guest,${cifs_options}"
                 else
                     cifs_options="-o guest"
@@ -151,8 +143,7 @@ main() {
             fi
 
             mount -t cifs "//${backup_server}/${cifs_directory}" "${backup_directory}" ${cifs_options} 2> "${backup_error}"
-            if [ $? -eq 0 ]
-            then
+            if [ $? -eq 0 ]; then
                 start_backup
                 rotate_backup
                 cd /tmp
@@ -165,8 +156,7 @@ main() {
         ;;
         ftp)
             start_backup
-            if [ "${backup_server_username}" ]
-            then
+            if [ "${backup_server_username}" ]; then
                 ftp_auth="user ${backup_server_username} ${backup_server_username}"
             fi
             ftp -pin "${backup_server}" << EOF
