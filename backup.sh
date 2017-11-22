@@ -14,7 +14,7 @@ fi
 send_email() {
     if [ yes = "${enable_mail_notification}" ]; then
         send_command="sendemail -f ${mail_from} -t ${mail_to} -u ${mail_subject} -s ${mail_server}"
-        cat ${backup_error} | ${send_command}
+        ${send_command} < "${backup_error}"
     fi
 }
 
@@ -32,18 +32,18 @@ directory_backup() {
     directories=${directories/;/ }
     for directory in ${directories}
     do
-        cd $(dirname "$directory")
-        directory_basename=$(basename "${directory}")
+        cd "$(dirname "$directory")"
+        directory_basename="$(basename "${directory}")"
         backup_name="${backup_date}-${directory_basename}-dir-${backup_suffix}"
         tar -cf "${backup_directory}/${backup_name}.${backup_extention}" "${directory_basename}" ${tar_options} 2> "${backup_error}"
         if [ $? -eq 0 ]; then
             echo "$(date "+%F %H:%M:%S") [SUCCESS] Backup directory \"${directory}\" completed. Backup name \"${backup_name}.${backup_extention}\"" >> "${backup_logfile}"
         elif [ $? -eq 1 ]; then
-            echo "$(date "+%F %H:%M:%S") [WARNING] Backup directory \"${directory}\" not consisted. Warning: \"$(cat ${backup_error})\"" >> "${backup_logfile}"
+            echo "$(date "+%F %H:%M:%S") [WARNING] Backup directory \"${directory}\" not consisted. Warning: \"$(cat "${backup_error}")\"" >> "${backup_logfile}"
             mail_subject="${mail_subject}: ${directory}"
             send_email
         else
-            echo "$(date "+%F %H:%M:%S") [ERROR] Backup directory \"${directory}\" failed. Error: \"$(cat ${backup_error})\"" >> "${backup_logfile}"
+            echo "$(date "+%F %H:%M:%S") [ERROR] Backup directory \"${directory}\" failed. Error: \"$(cat "${backup_error}")\"" >> "${backup_logfile}"
             mail_subject="${mail_subject}: ${directory}"
             send_email
             rm "${backup_directory}/${backup_name}.${backup_extention}"
@@ -72,13 +72,13 @@ mysql_backup() {
     for database in ${databases}
     do
         backup_name="${backup_date}-${database}-db-${backup_suffix}"
-        mysqldump ${db_server} ${mysql_auth} ${db_backup_options} ${database} > "${backup_name}.sql" 2> "${backup_error}"
+        mysqldump "${db_server}" ${mysql_auth} ${db_backup_options} "${database}" > "${backup_name}.sql" 2> "${backup_error}"
         if [ $? -eq 0 ]; then
             tar -cf "${backup_name}.${backup_extention}" "${backup_name}.sql" ${tar_options}
             chmod 600 "${backup_name}.${backup_extention}"
             echo "$(date "+%F %H:%M:%S") [SUCCESS] Backup database \"${database}\" completed. Backup name \"${backup_name}.${backup_extention}\"" >> "${backup_logfile}"
         else
-            echo -e "$(date "+%F %H:%M:%S") [ERROR] Backup database \"${database}\" failed. Error: \"$(cat ${backup_error} | grep -v 'Using a password on the command line interface can be insecure')\"" >> "${backup_logfile}"
+            echo -e "$(date "+%F %H:%M:%S") [ERROR] Backup database \"${database}\" failed. Error: \"$(grep -v 'Using a password on the command line interface can be insecure' "${backup_error}")\"" >> "${backup_logfile}"
             mail_subject="${mail_subject}: ${database}"
             send_email
         fi
@@ -87,10 +87,10 @@ mysql_backup() {
 }
 
 start_backup() {
-    if [ ${directories} ]; then
+    if [ "${directories}" ]; then
         directory_backup
     fi
-    if [ ${databases} ]; then
+    if [ "${databases}" ]; then
         mysql_backup
     fi
 }
@@ -99,8 +99,8 @@ rotate_backup() {
     if [ yes = "${backup_rotation_enabled}" ]; then
         cd "${backup_directory}"
         if [ $? -eq 0 ]; then
-            if [ '/' != $(pwd) ]; then
-                find "${backup_directory}" -type f -name "*${backup_extention}" -mtime +${backup_rotation} -delete
+            if [ '/' != "$(pwd)" ]; then
+                find "${backup_directory}" -type f -name "*${backup_extention}" -mtime +"${backup_rotation}" -delete
             fi
         fi
     fi
@@ -121,7 +121,7 @@ main() {
                 cd /tmp
                 umount "${backup_directory}"
             else
-                echo -e "$(date "+%F %H:%M:%S") [ERROR] Mount \"${backup_server}:${nfs_target}\" via ${backup_type} failed. Error: \"$(cat ${backup_error})\"" >> "${backup_logfile}"
+                echo -e "$(date "+%F %H:%M:%S") [ERROR] Mount \"${backup_server}:${nfs_target}\" via ${backup_type} failed. Error: \"$(cat "${backup_error}")\"" >> "${backup_logfile}"
                 mail_subject="${mail_subject}: ${backup_type}"
                 send_email
             fi
@@ -149,7 +149,7 @@ main() {
                 cd /tmp
                 umount "${backup_directory}"
             else
-                echo -e "$(date "+%F %H:%M:%S") [ERROR] Mount \"//${backup_server}/${cifs_directory}\" via ${backup_type} failed. Error: \"$(cat ${backup_error})\"" >> "${backup_logfile}"
+                echo -e "$(date "+%F %H:%M:%S") [ERROR] Mount \"//${backup_server}/${cifs_directory}\" via ${backup_type} failed. Error: \"$(cat "${backup_error}")\"" >> "${backup_logfile}"
                 mail_subject="${mail_subject}: ${backup_type}"
                 send_email
             fi
