@@ -10,13 +10,14 @@ else
     exit 1
 fi
 
-# Functions
+
 send_email() {
     if [ yes = "${enable_mail_notification}" ]; then
         send_command="sendemail -f ${mail_from} -t ${mail_to} -u ${mail_subject} -s ${mail_server}"
         ${send_command} < "${backup_error}"
     fi
 }
+
 
 check_enable_gzip() {
     if [ yes = "${enable_gzip}" ]; then
@@ -26,6 +27,7 @@ check_enable_gzip() {
         backup_extention='tar'
     fi
 }
+
 
 directory_backup() {
     check_enable_gzip
@@ -52,7 +54,13 @@ directory_backup() {
     done
 }
 
+
 mysql_backup() {
+    mysqldump_backup
+}
+
+
+mysqldump_backup() {
     check_enable_gzip
     if [ "${db_server}" ]; then
         db_server="-h${db_server}"
@@ -86,6 +94,7 @@ mysql_backup() {
     done
 }
 
+
 start_backup() {
     if [ "${directories}" ]; then
         directory_backup
@@ -94,6 +103,7 @@ start_backup() {
         mysql_backup
     fi
 }
+
 
 rotate_backup() {
     if [ yes = "${backup_rotation_enabled}" ]; then
@@ -106,7 +116,69 @@ rotate_backup() {
     fi
 }
 
-# Main
+
+mount_nfs() {
+    mount -t nfs "${backup_server}:${nfs_target}" "${backup_directory}" -o ${nfs_options} 2> "${backup_error}"
+    if [ $? -eq 0 ]; then
+        start_backup
+        rotate_backup
+        cd /tmp
+        umount "${backup_directory}"
+    else
+        echo -e "$(date "+%F %H:%M:%S") [ERROR] Mount \"${backup_server}:${nfs_target}\" via ${backup_type} failed. Error: \"$(cat "${backup_error}")\"" >> "${backup_logfile}"
+        mail_subject="${mail_subject}: ${backup_type}"
+        send_email
+    fi
+}
+
+
+mount_cifs() {
+    if [ "${backup_server_username}" ]
+    then
+        if [ "${cifs_options}" ]; then
+            cifs_options="-o user=${backup_server_username},password=${backup_server_password},${cifs_options}"
+        else
+            cifs_options="-o user=${backup_server_username},password=${backup_server_password}"
+        fi
+    else
+        if [ "${cifs_options}" ]; then
+            cifs_options="-o guest,${cifs_options}"
+        else
+            cifs_options="-o guest"
+        fi
+    fi
+
+    mount -t cifs "//${backup_server}/${cifs_directory}" "${backup_directory}" ${cifs_options} 2> "${backup_error}"
+    if [ $? -eq 0 ]; then
+        start_backup
+        rotate_backup
+        cd /tmp
+        umount "${backup_directory}"
+    else
+        echo -e "$(date "+%F %H:%M:%S") [ERROR] Mount \"//${backup_server}/${cifs_directory}\" via ${backup_type} failed. Error: \"$(cat "${backup_error}")\"" >> "${backup_logfile}"
+        mail_subject="${mail_subject}: ${backup_type}"
+        send_email
+    fi
+}
+
+
+put_ftp() {
+    start_backup
+    if [ "${backup_server_username}" ]; then
+        ftp_auth="user ${backup_server_username} ${backup_server_username}"
+    fi
+    ftp -pin "${backup_server}" << EOF
+${ftp_auth}
+binary
+cd ${ftp_directory}
+mput ./${backup_date}-*
+bye
+EOF
+    rm ./${backup_date}-*
+
+}
+
+
 main() {
     case ${backup_type} in
         local)
@@ -114,59 +186,13 @@ main() {
             rotate_backup
         ;;
         nfs)
-            mount -t nfs "${backup_server}:${nfs_target}" "${backup_directory}" -o ${nfs_options} 2> "${backup_error}"
-            if [ $? -eq 0 ]; then
-                start_backup
-                rotate_backup
-                cd /tmp
-                umount "${backup_directory}"
-            else
-                echo -e "$(date "+%F %H:%M:%S") [ERROR] Mount \"${backup_server}:${nfs_target}\" via ${backup_type} failed. Error: \"$(cat "${backup_error}")\"" >> "${backup_logfile}"
-                mail_subject="${mail_subject}: ${backup_type}"
-                send_email
-            fi
+            mount_nfs
         ;;
         cifs)
-            if [ "${backup_server_username}" ]
-            then
-                if [ "${cifs_options}" ]; then
-                    cifs_options="-o user=${backup_server_username},password=${backup_server_password},${cifs_options}"
-                else
-                    cifs_options="-o user=${backup_server_username},password=${backup_server_password}"
-                fi
-            else
-                if [ "${cifs_options}" ]; then
-                    cifs_options="-o guest,${cifs_options}"
-                else
-                    cifs_options="-o guest"
-                fi
-            fi
-
-            mount -t cifs "//${backup_server}/${cifs_directory}" "${backup_directory}" ${cifs_options} 2> "${backup_error}"
-            if [ $? -eq 0 ]; then
-                start_backup
-                rotate_backup
-                cd /tmp
-                umount "${backup_directory}"
-            else
-                echo -e "$(date "+%F %H:%M:%S") [ERROR] Mount \"//${backup_server}/${cifs_directory}\" via ${backup_type} failed. Error: \"$(cat "${backup_error}")\"" >> "${backup_logfile}"
-                mail_subject="${mail_subject}: ${backup_type}"
-                send_email
-            fi
+            mount_cifs
         ;;
         ftp)
-            start_backup
-            if [ "${backup_server_username}" ]; then
-                ftp_auth="user ${backup_server_username} ${backup_server_username}"
-            fi
-            ftp -pin "${backup_server}" << EOF
-${ftp_auth}
-binary
-cd ${ftp_directory}
-mput ./${backup_date}-*
-bye
-EOF
-            rm ./${backup_date}-*
+            put_ftp
         ;;
         *)
             echo -e "$(date "+%F %H:%M:%S") [ERROR] Mount failed. Error: \"Backup type ${backup_type} not found\"" >> "${backup_logfile}"
