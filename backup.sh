@@ -118,6 +118,7 @@ rotate_backup() {
 
 
 mount_nfs() {
+    umount "${backup_directory}"
     mount -t nfs "${backup_server}:${nfs_target}" "${backup_directory}" -o ${nfs_options} 2> "${backup_error}"
     if [ $? -eq 0 ]; then
         start_backup
@@ -148,6 +149,7 @@ mount_cifs() {
         fi
     fi
 
+    umount "${backup_directory}"
     mount -t cifs "//${backup_server}/${cifs_directory}" "${backup_directory}" ${cifs_options} 2> "${backup_error}"
     if [ $? -eq 0 ]; then
         start_backup
