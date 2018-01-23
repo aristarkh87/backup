@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (c) 2017 Oleg Dolgikh
+# Copyright (c) 2018 Oleg Dolgikh
 #
 
 if [ "$1" ]; then
@@ -43,7 +43,6 @@ directory_backup() {
         elif [ $? -eq 1 ]; then
             echo "$(date "+%F %H:%M:%S") [WARNING] Backup directory \"${directory}\" not consisted. Warning: \"$(cat "${backup_error}")\"" >> "${backup_logfile}"
             mail_subject="${mail_subject}: ${directory}"
-            send_email
         else
             echo "$(date "+%F %H:%M:%S") [ERROR] Backup directory \"${directory}\" failed. Error: \"$(cat "${backup_error}")\"" >> "${backup_logfile}"
             mail_subject="${mail_subject}: ${directory}"
