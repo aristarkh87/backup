@@ -1,8 +1,8 @@
-# List of directories to backup, separated by semi-colon
-directories='/etc'
+# Array of directories to backup
+directories[0]='/etc'
 
-# List of databases to backup, separated by semi-colon
-databases=''
+# Array of databases to backup
+databases[0]=''
 
 # Database dump options
 # Utility to backup database. Supported values: 'mysqldump'
@@ -24,7 +24,7 @@ tar_options=''
 
 # Mail Notification options
 # You need to install sendemail (sudo apt-get install sendemail). Supported values: 'yes', 'no'
-enable_mail_notification='yes'
+enable_mail_notification='no'
 
 # Mail options: smtp server, recipient, sender, subject
 mail_server='mail.example.org'
@@ -37,10 +37,10 @@ mail_subject='Backup error'
 backup_type='local'
 
 # Directory for backup files
-backup_directory='/usr/backups/data'
+backup_directory='/mnt'
 
 # Date format and suffix for backup name
-backup_date=$(/bin/date +%Y-%m-%d)
+backup_date=$(/bin/date +%Y-%m-%d-%H-%M)
 backup_suffix='backup'
 
 # Enable backup rotation. Supported values: 'yes', 'no'
@@ -56,9 +56,6 @@ backup_server_password='password'
 
 # Path to backup log file
 backup_logfile='/tmp/backup.log'
-
-# Temp file for backup error
-backup_error='/tmp/backup_error.log'
 
 # NFS target and options
 nfs_target="/raid/data/backups/$(hostname -f)"
