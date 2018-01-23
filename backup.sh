@@ -36,8 +36,8 @@ directory_backup() {
     do
         cd "$(dirname "$directory")"
         directory_basename="$(basename "${directory}")"
-        backup_name="${backup_date}-${directory_basename}-dir-${backup_suffix}"
-        tar -cf "${backup_directory}/${backup_name}.${backup_extention}" "${directory_basename}" ${tar_options} 2> "${backup_error}"
+        backup_name="${backup_date}-${directory_basename// /}-dir-${backup_suffix}"
+        tar -cf "${backup_directory}/${backup_name}.${backup_extention}" ${tar_options} "${directory_basename}" 2> "${backup_error}"
         if [ $? -eq 0 ]; then
             echo "$(date "+%F %H:%M:%S") [SUCCESS] Backup directory \"${directory}\" completed. Backup name \"${backup_name}.${backup_extention}\"" >> "${backup_logfile}"
         elif [ $? -eq 1 ]; then
@@ -81,7 +81,7 @@ mysqldump_backup() {
         backup_name="${backup_date}-${database}-db-${backup_suffix}"
         mysqldump "${db_server}" ${mysql_auth} ${db_backup_options} "${database}" > "${backup_name}.sql" 2> "${backup_error}"
         if [ $? -eq 0 ]; then
-            tar -cf "${backup_name}.${backup_extention}" "${backup_name}.sql" ${tar_options}
+            tar -cf "${backup_name}.${backup_extention}" ${tar_options} "${backup_name}.sql"
             chmod 600 "${backup_name}.${backup_extention}"
             echo "$(date "+%F %H:%M:%S") [SUCCESS] Backup database \"${database}\" completed. Backup name \"${backup_name}.${backup_extention}\"" >> "${backup_logfile}"
         else
@@ -176,11 +176,13 @@ mput ./${backup_date}-*
 bye
 EOF
     rm ./${backup_date}-*
-
 }
 
 
 main() {
+    if [ ! -d "${backup_directory}" ]; then
+        exit 1
+    fi
     case ${backup_type} in
         local)
             start_backup
