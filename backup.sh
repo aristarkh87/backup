@@ -33,22 +33,28 @@ directory_backup() {
     check_enable_gzip
     for directory in "${directories[@]}"
     do
-        cd "$(dirname "$directory")"
-        directory_basename="$(basename "${directory}")"
-        backup_name="${backup_date}-${directory_basename// /}-dir-${backup_suffix}"
-        tar -cf "${backup_directory}/${backup_name}.${backup_extention}" ${tar_options} "${directory_basename}" 2> "${current_error}"
+        if [ -d "${directory}" ]; then
+            cd "$(dirname "$directory")"
+            directory_basename="$(basename "${directory}")"
+            backup_name="${backup_date}-${directory_basename// /}-dir-${backup_suffix}"
+            tar -cf "${backup_directory}/${backup_name}.${backup_extention}" ${tar_options} "${directory_basename}" 2> "${current_error}"
+        else
+            echo "$(date "+%F %H:%M:%S") [ERROR] Backup directory \"${directory}\" not found" >> "${backup_logfile}"
+            mail_subject="${mail_subject}: ${directory}"
+            send_email
+            continue
+        fi
         if [ $? -eq 0 ]; then
+            chmod 600 "${backup_directory}/${backup_name}.${backup_extention}"
             echo "$(date "+%F %H:%M:%S") [SUCCESS] Backup directory \"${directory}\" completed. Backup name \"${backup_name}.${backup_extention}\"" >> "${backup_logfile}"
         elif [ $? -eq 1 ]; then
             echo "$(date "+%F %H:%M:%S") [WARNING] Backup directory \"${directory}\" not consisted. Warning: \"$(cat "${current_error}")\"" >> "${backup_logfile}"
-            mail_subject="${mail_subject}: ${directory}"
         else
             echo "$(date "+%F %H:%M:%S") [ERROR] Backup directory \"${directory}\" failed. Error: \"$(cat "${current_error}")\"" >> "${backup_logfile}"
             mail_subject="${mail_subject}: ${directory}"
             send_email
             rm "${backup_directory}/${backup_name}.${backup_extention}"
         fi
-        chmod 600 "${backup_directory}/${backup_name}.${backup_extention}"
     done
 }
 
