@@ -185,6 +185,8 @@ EOF
 
 main() {
     if [ ! -d "${backup_directory}" ]; then
+        echo -e "$(date "+%F %H:%M:%S") [ERROR] Backup directory ${backup_directory} not found\"" >> "${backup_logfile}"
+        send_email
         exit 1
     fi
     current_error='/tmp/backup_current_error.log'
@@ -208,7 +210,7 @@ main() {
             send_email
         ;;
     esac
-    rm "${current_error}"
+    rm "${current_error}" > /dev/null 2>&1
 }
 
 main
